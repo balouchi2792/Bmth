@@ -1,0 +1,2 @@
+rootProject.name = 'bmth-android-server'
+include ':app'

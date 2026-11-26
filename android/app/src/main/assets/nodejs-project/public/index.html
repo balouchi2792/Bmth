@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>bmth — سامانه ردیابی هوشمند</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0d47a1">
+</head>
+<body>
+
+  <!-- ۱. ورود و ثبت‌نام bmth -->
+  <div id="auth-screen">
+    <div class="auth-box">
+      <div style="width:54px;height:54px;border-radius:16px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;margin:0 auto 10px;">bmth</div>
+      <h3 style="text-align:center;margin:0;">سامانه ردیابی هوشمند bmth</h3>
+      <p style="text-align:center;font-size:12px;color:#757575;margin:4px 0 0;">bmth Tracking & Management Console</p>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="atab-login" onclick="switchAuth('login')">ورود به حساب</div>
+        <div class="auth-tab" id="atab-reg" onclick="switchAuth('reg')">ثبت‌نام کاربر جدید</div>
+      </div>
+      <div id="login-box">
+        <input type="email" id="l-email" class="inp" placeholder="ایمیل" dir="ltr">
+        <input type="password" id="l-pass" class="inp" placeholder="رمز عبور" dir="ltr">
+        <button class="btn btn-full" onclick="doLogin()">ورود به bmth</button>
+        <div style="margin-top:12px;background:#f8fafc;padding:10px;border-radius:10px;font-size:11px;color:#475569;line-height:1.7;">
+          <b>ورود آزمایشی:</b><br>
+          • ادمین مستقل: <code dir="ltr">admin@bmth.ir</code> | رمز: <code dir="ltr">admin123</code><br>
+          • کاربر نمونه: <code dir="ltr">balouchi2792@gmail.com</code> | رمز: <code dir="ltr">123456</code>
+        </div>
+      </div>
+      <div id="reg-box" style="display:none;">
+        <input type="text" id="r-name" class="inp" placeholder="نام و نام خانوادگی">
+        <input type="email" id="r-email" class="inp" placeholder="ایمیل معتبر" dir="ltr">
+        <input type="password" id="r-pass" class="inp" placeholder="انتخاب رمز عبور" dir="ltr">
+        <button class="btn btn-green btn-full" onclick="doRegister()">ثبت‌نام در bmth</button>
+        <p style="font-size:11px;color:#2e7d32;text-align:center;margin-top:8px;">با ثبت هر ماشین جدید، ۱۰ روز مهلت تست رایگان فعال می‌شود.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ۲. پنل کاربری bmth (فاز ۱: پوسته اصلی و یگان‌ها) -->
+  <div id="user-app">
+    <div id="map"></div>
+
+    <!-- دکمه‌های شناور دقیقاً مطابق ویدیو -->
+    <div class="fab-circle map-search-fab" onclick="openSearchUnit()"><span class="ms">search</span></div>
+
+    <div class="map-left-stack">
+      <div class="fab-circle" onclick="openHamburgerMenu()"><span class="ms">more_vert</span></div>
+      <div class="fab-circle" onclick="openUserTab('alerts')">
+        <span class="ms">notifications</span>
+        <span class="fab-badge" id="top-bell">1</span>
+      </div>
+      <div class="fab-circle" onclick="toggleLabels()" id="lbl-fab" style="font-weight:800;font-size:16px;color:var(--primary);">A</div>
+      <div class="fab-circle" onclick="focusAllUnits()"><span class="ms">crop_free</span></div>
+      <div class="fab-circle" onclick="openMapTypeSheet()"><span class="ms">layers</span></div>
+    </div>
+
+    <div class="map-zoom-stack" id="zoom-stack">
+      <div class="fab-circle" onclick="map.zoomIn()"><span class="ms">add</span></div>
+      <div class="fab-circle" onclick="map.zoomOut()"><span class="ms">remove</span></div>
+    </div>
+
+    <!-- Bottom Sheet سه‌حالته -->
+    <div class="u-sheet collapsed" id="u-sheet">
+      <div class="u-sheet-head">
+        <div class="head-left">
+          <span class="ms" id="u-left-btn" style="cursor:pointer;" onclick="handleSheetLeftBtn()">keyboard_arrow_up</span>
+        </div>
+        <div class="head-title" id="u-sheet-title" style="cursor:pointer;" onclick="toggleUSheet()">یگان‌ها</div>
+        <div class="head-right-group">
+          <span class="ms" style="cursor:pointer;color:#424242;" onclick="openSearchUnit()">search</span>
+          <div class="head-unit-btn" onclick="openUnitsDotsMenu()" title="گزینه‌های یگان‌ها">
+            <span class="ms" style="font-size:20px;">directions_car</span>
+          </div>
+        </div>
+      </div>
+      <div class="u-sheet-body" id="u-sheet-body"></div>
+    </div>
+
+    <!-- نوار ۱۰ تایی پایین دقیقاً مطابق Forguard -->
+    <div class="nav-10">
+      <div class="n10-cell active" id="unav-units" onclick="openUserTab('units')"><span class="ms">location_on</span><span>یگان‌ها</span></div>
+      <div class="n10-cell" id="unav-trips" onclick="openUserTab('trips')"><span class="ms">route</span><span>سفرها</span></div>
+      <div class="n10-cell" id="unav-alerts" onclick="openUserTab('alerts')"><span class="nav-badge" id="nav-bell">1</span><span class="ms">notifications</span><span>هشدارها</span></div>
+      <div class="n10-cell" id="unav-geofences" onclick="openUserTab('geofences')"><span class="ms">pentagon</span><span>حصارهای جغرافیایی</span></div>
+      <div class="n10-cell" onclick="toggleNavExpand()"><div class="nav-toggle-circle"><span class="ms" style="font-size:18px;">keyboard_arrow_up</span></div></div>
+
+      <div class="n10-cell" id="unav-stats" onclick="openUserTab('stats')"><span class="ms">bar_chart</span><span>آمار</span></div>
+      <div class="n10-cell" id="unav-maint" onclick="openUserTab('maint')"><span class="ms">build</span><span>نگهداری</span></div>
+      <div class="n10-cell" id="unav-timeline" onclick="openUserTab('timeline')"><span class="ms">view_timeline</span><span>جدول زمانی</span></div>
+      <div class="n10-cell" id="unav-provider" onclick="openUserTab('provider')"><span class="ms">apartment</span><span>ارائه‌دهنده</span></div>
+      <div class="n10-cell" id="unav-settings" onclick="openUserTab('settings')"><span class="ms">tune</span><span>تنظیمات</span></div>
+    </div>
+  </div>
+
+  <!-- ۳. پنل مدیریت مستقل bmth Console -->
+  <div id="admin-console">
+    <div class="c-top-banner">
+      <span>bmth Console — مدیریت مرکزی (TCP 5023)</span>
+      <span style="cursor:pointer;text-decoration:underline;" onclick="logout()">خروج</span>
+    </div>
+    <div class="c-header">
+      <b style="font-size:15px;color:var(--primary);">bmth Console</b>
+      <span class="ms" style="color:#d32f2f;cursor:pointer;" onclick="logout()">logout</span>
+    </div>
+    <div class="c-body">
+      <div class="c-rail">
+        <div class="rail-btn active" id="ar-dash" onclick="openAdminTab('dash')"><span class="ms">dashboard</span><span>داشبورد</span></div>
+        <div class="rail-btn" id="ar-accounts" onclick="openAdminTab('accounts')"><span class="ms">group</span><span>حساب‌ها</span></div>
+        <div class="rail-btn" id="ar-roles" onclick="openAdminTab('roles')"><span class="ms">admin_panel_settings</span><span>نقش‌ها</span></div>
+        <div class="rail-btn" id="ar-units" onclick="openAdminTab('units')"><span class="ms">directions_car</span><span>واحدها</span></div>
+        <div class="rail-btn" id="ar-design" onclick="openAdminTab('design')"><span class="ms">palette</span><span>طراحی</span></div>
+      </div>
+      <div class="c-main" id="admin-main"></div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modal-bg" onclick="if(event.target.id==='modal-bg') closeModal()">
+    <div class="modal-sheet" id="modal-content"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="icons.js"></script>
+  <script src="client.js"></script>
+  <script src="phase2.js"></script>
+  <script src="phase3.js"></script>
+  <script src="admin.js"></script>
+  <script src="icon-picker.js"></script>
+  <script src="unit-details.js"></script>
+  <script src="cmd-panel.js"></script>
+  <script src="trips-view.js"></script>
+  <script src="raw-panel.js"></script>
+  <script src="sheet-drag.js"></script>
+  <script src="history-view.js"></script>
+  <script src="settings-view.js"></script>
+  <script src="stats-view.js"></script>
+  <script src="maint-view.js"></script>
+  <script src="timeline-view.js"></script>
+  <script src="gps-models.js"></script>
+  <script src="renewal-system.js"></script>
+  <script src="units-menu-pro.js"></script>
+  <script src="ms-svg.js"></script>
+  <script src="/auth-login.js"></script>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}</script>
+</body>
+</html>
