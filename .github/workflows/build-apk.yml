@@ -18,12 +18,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Android SDK & Accept Licenses
+      - name: Setup Android SDK
         run: |
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-          yes | sdkmanager --licenses || true
-          sdkmanager "cmdline-tools;latest" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-          yes | sdkmanager --licenses || true
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          CMDLINE="$SDK_ROOT/cmdline-tools/latest/bin"
+          if [ ! -x "$CMDLINE/sdkmanager" ]; then
+            mkdir -p "$SDK_ROOT/cmdline-tools/temp"
+            curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline.zip
+            unzip -q /tmp/cmdline.zip -d "$SDK_ROOT/cmdline-tools/temp"
+            mv "$SDK_ROOT/cmdline-tools/temp/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+            rm -rf "$SDK_ROOT/cmdline-tools/temp" /tmp/cmdline.zip
+          fi
+          yes | "$CMDLINE/sdkmanager" --sdk_root="$SDK_ROOT" --licenses || true
+          "$CMDLINE/sdkmanager" --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Build Debug APK
         run: |
