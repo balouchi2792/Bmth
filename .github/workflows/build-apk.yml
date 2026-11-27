@@ -34,11 +34,20 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ls -la
+          GW_PATH=$(find . -maxdepth 3 -name "gradlew" -type f | head -n 1)
+          if [ -n "$GW_PATH" ]; then
+            PROJ_DIR=$(dirname "$GW_PATH")
+            cd "$PROJ_DIR"
+            chmod +x ./gradlew
+            ./gradlew assembleDebug
+          else
+            echo "No gradlew found, checking gradle..."
+            gradle assembleDebug || ls -laR
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bmth-app-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
