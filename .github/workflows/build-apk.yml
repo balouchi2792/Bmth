@@ -30,24 +30,19 @@ jobs:
             rm -rf "$SDK_ROOT/cmdline-tools/temp" /tmp/cmdline.zip
           fi
           yes | "$CMDLINE/sdkmanager" --sdk_root="$SDK_ROOT" --licenses || true
-          "$CMDLINE/sdkmanager" --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          "$CMDLINE/sdkmanager" --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-34" "build-tools;34.0.3"
 
       - name: Build Debug APK
         run: |
-          ls -la
-          GW_PATH=$(find . -maxdepth 3 -name "gradlew" -type f | head -n 1)
-          if [ -n "$GW_PATH" ]; then
-            PROJ_DIR=$(dirname "$GW_PATH")
-            cd "$PROJ_DIR"
-            chmod +x ./gradlew
-            ./gradlew assembleDebug
-          else
-            echo "No gradlew found, checking gradle..."
-            gradle assembleDebug || ls -laR
+          if [ ! -f "./gradlew" ]; then
+            gradle wrapper --gradle-version 8.5 --distribution-type bin
           fi
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
+          ls -lh app/build/outputs/apk/debug/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bmth-app-debug
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: app/build/outputs/apk/debug/*.apk
